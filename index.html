@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Discord</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    background: #313338;
+    color: #dbdee1;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input { font-family: inherit; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #1a1b1e; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #141518; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* LOGIN */
+  #login {
+    display: flex; align-items: center; justify-content: center;
+    height: 100vh;
+    background: radial-gradient(ellipse at top, #404eed 0%, #2b2d31 60%, #1e1f22 100%);
+    animation: fadeIn .5s ease;
+  }
+  #login .card {
+    background: #313338;
+    padding: 32px;
+    border-radius: 5px;
+    width: 480px;
+    box-shadow: 0 2px 10px 0 rgba(0,0,0,.2);
+    animation: slideUp .6s cubic-bezier(.2,.9,.3,1.1);
+  }
+  #login h1 { font-size: 24px; color: #f2f3f5; margin-bottom: 8px; text-align: center; font-weight: 600; }
+  #login p { font-size: 16px; color: #b5bac1; margin-bottom: 20px; text-align: center; }
+  #login label {
+    display: block; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .02em;
+    color: #b5bac1; margin-bottom: 8px;
+  }
+  #login input {
+    width: 100%; padding: 10px;
+    background: #1e1f22; color: #dbdee1;
+    border: none; border-radius: 3px;
+    outline: none; font-size: 16px; margin-bottom: 20px;
+    transition: box-shadow .15s;
+  }
+  #login input:focus { box-shadow: 0 0 0 2px #5865f2; }
+  #login button {
+    width: 100%; padding: 10px 16px;
+    background: #5865f2; color: #fff;
+    border: none; border-radius: 3px;
+    font-size: 16px; font-weight: 500;
+    cursor: pointer; line-height: 24px;
+    transition: background .17s, transform .1s;
+  }
+  #login button:hover { background: #4752c4; }
+  #login button:active { transform: scale(.99); }
+  #login button:disabled { opacity: .6; cursor: wait; }
+  #error { color: #fa777c; font-size: 14px; min-height: 18px; text-align: center; margin-top: 8px; font-style: italic; }
+
+  /* APP */
+  #app { display: none; height: 100vh; }
+  #app.active { display: flex; animation: fadeIn .3s ease; }
+
+  /* GUILDS */
+  #guilds {
+    width: 72px; background: #1e1f22;
+    display: flex; flex-direction: column;
+    align-items: center; padding: 12px 0; gap: 8px;
+    overflow-y: auto; overflow-x: hidden;
+    flex-shrink: 0; scrollbar-width: none;
+  }
+  #guilds::-webkit-scrollbar { display: none; }
+  .guild {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: #313338; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 500; font-size: 18px; cursor: pointer;
+    overflow: hidden; flex-shrink: 0;
+    transition: border-radius .25s cubic-bezier(.2,.9,.3,1.4),
+                background .2s, transform .2s;
+    position: relative;
+  }
+  .guild:hover { border-radius: 16px; background: #5865f2; transform: scale(1.06); }
+  .guild.active { border-radius: 16px; background: #5865f2; }
+  .guild img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+  .guild::before {
+    content: ''; position: absolute; left: -16px; top: 50%;
+    width: 4px; height: 40px; background: #fff;
+    border-radius: 0 4px 4px 0;
+    transform: translateY(-50%) scaleY(.4);
+    opacity: 0;
+    transition: transform .25s, opacity .25s;
+  }
+  .guild:hover::before { opacity: 1; transform: translateY(-50%) scaleY(.5); }
+  .guild.active::before { opacity: 1; transform: translateY(-50%) scaleY(1); }
+
+  /* CHANNELS */
+  #channels {
+    width: 240px; background: #2b2d31;
+    display: flex; flex-direction: column;
+    overflow: hidden; flex-shrink: 0;
+  }
+  #guild-header {
+    height: 48px; padding: 0 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    color: #f2f3f5; font-weight: 600; font-size: 15px;
+    border-bottom: 1px solid #1f2023;
+    cursor: pointer; flex-shrink: 0;
+    transition: background .12s;
+  }
+  #guild-header:hover { background: #35373c; }
+  #guild-header .chev { color: #b5bac1; font-size: 10px; }
+  #channel-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .channel {
+    padding: 6px 8px; border-radius: 4px;
+    color: #949ba4; font-size: 16px; line-height: 20px;
+    cursor: pointer; margin-bottom: 2px;
+    display: flex; align-items: center; gap: 4px;
+    font-weight: 500;
+    transition: background .1s, color .1s;
+  }
+  .channel .hash { color: #80848e; font-size: 18px; }
+  .channel:hover { background: #35373c; color: #dbdee1; }
+  .channel:hover .hash { color: #dbdee1; }
+  .channel.active { background: #404249; color: #f2f3f5; }
+  .channel.active .hash { color: #f2f3f5; }
+
+  /* USER PANEL */
+  #user-panel {
+    height: 52px; background: #232428;
+    display: flex; align-items: center;
+    padding: 0 8px; gap: 8px;
+    border-top: 1px solid #1e1f22; flex-shrink: 0;
+  }
+  #user-panel .avatar-wrap { position: relative; }
+  #user-panel .avatar-wrap img { width: 32px; height: 32px; border-radius: 50%; display: block; }
+  #user-panel .avatar-wrap::after {
+    content: ''; position: absolute; right: -2px; bottom: -2px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #23a55a; border: 3px solid #232428;
+  }
+  #user-panel .info { flex: 1; min-width: 0; line-height: 1.1; }
+  #user-panel .name { font-size: 14px; color: #f2f3f5; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #user-panel .tag { font-size: 12px; color: #b5bac1; }
+  #logout-btn {
+    background: transparent; color: #b5bac1;
+    border: none; padding: 4px 8px; border-radius: 3px;
+    font-size: 12px; cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  #logout-btn:hover { background: #da373c; color: #fff; }
+  #perm-warning {
+    background: #4a2b2b; color: #fa777c;
+    font-size: 12px; padding: 6px 12px;
+    border-bottom: 1px solid #1e1f22;
+    display: none;
+  }
+  #perm-warning.active { display: block; }
+
+  /* CHAT */
+  #chat { flex: 1; display: flex; flex-direction: column; background: #313338; min-width: 0; }
+  #chat-header {
+    height: 48px; padding: 0 16px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid #1f2023;
+    color: #f2f3f5; font-weight: 600; font-size: 15px;
+    flex-shrink: 0;
+  }
+  #chat-header .hash { color: #80848e; font-size: 20px; font-weight: 400; }
+  #messages {
+    flex: 1; overflow-y: auto;
+    padding: 8px 0 16px;
+    display: flex; flex-direction: column;
+    scroll-behavior: smooth;
+  }
+  .msg {
+    display: flex; gap: 16px;
+    padding: 2px 16px;
+    margin-top: 12px;
+    animation: msgIn .35s cubic-bezier(.2,.9,.3,1.05);
+  }
+  .msg:hover { background: #2e3035; }
+  .msg img.avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+  .msg .body { flex: 1; min-width: 0; }
+  .msg .head { display: flex; align-items: baseline; gap: 8px; }
+  .msg .author { color: #f2f3f5; font-weight: 500; font-size: 16px; }
+  .msg .time { color: #949ba4; font-size: 12px; }
+  .msg .text {
+    color: #dbdee1; font-size: 16px; line-height: 1.375;
+    word-wrap: break-word; white-space: pre-wrap;
+    user-select: text;
+  }
+  .msg .attachment {
+    margin-top: 6px; max-width: 420px;
+    border-radius: 8px; overflow: hidden;
+    cursor: pointer; display: inline-block;
+    transition: filter .15s;
+  }
+  .msg .attachment:hover { filter: brightness(1.1); }
+  .msg .attachment img { width: 100%; display: block; }
+  .msg .attachment.file-link {
+    background: #2b2d31; padding: 10px 12px;
+    border-radius: 4px; color: #00a8fc;
+    text-decoration: underline; font-size: 14px;
+  }
+
+  /* COMPOSER */
+  #composer { padding: 0 16px 24px; flex-shrink: 0; position: relative; }
+  #composer .row {
+    background: #383a40; border-radius: 8px;
+    display: flex; align-items: center;
+    padding: 0 16px;
+    transition: background .12s;
+  }
+  #composer .row:focus-within { background: #3a3c42; }
+  #attach-btn {
+    background: transparent; color: #b5bac1;
+    border: none; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 50%;
+    font-size: 20px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s, transform .1s;
+    flex-shrink: 0; margin-right: 8px;
+  }
+  #attach-btn:hover { background: #4a4d55; color: #dbdee1; }
+  #attach-btn:active { transform: scale(.9); }
+  #msg-input {
+    flex: 1; padding: 11px 0;
+    background: transparent; color: #dbdee1;
+    border: none; outline: none;
+    font-size: 16px; line-height: 1.375;
+    user-select: text;
+  }
+  #msg-input::placeholder { color: #6d6f78; }
+  #msg-input:disabled { opacity: .5; }
+
+  #file-preview {
+    position: absolute; bottom: 80px; left: 16px; right: 16px;
+    background: #2b2d31; border-radius: 8px;
+    padding: 10px; display: none;
+    align-items: center; gap: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    z-index: 50;
+    border: 1px solid #1e1f22;
+  }
+  #file-preview.active { display: flex; animation: slideUp .28s cubic-bezier(.2,.9,.3,1.1); }
+  #file-preview img { height: 64px; border-radius: 4px; }
+  #file-preview .meta { flex: 1; font-size: 14px; color: #dbdee1; min-width: 0; }
+  #file-preview .meta .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #file-preview .meta .hint { color: #949ba4; font-size: 12px; margin-top: 2px; }
+  #file-preview button {
+    background: transparent; color: #b5bac1; border: none;
+    width: 32px; height: 32px; border-radius: 50%;
+    cursor: pointer; font-size: 20px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #file-preview button:hover { background: #da373c; color: #fff; }
+
+  /* CONTEXT MENU */
+  #ctx {
+    position: fixed; z-index: 1000;
+    background: #111214; border-radius: 4px;
+    padding: 4px; min-width: 196px;
+    box-shadow: 0 8px 16px rgba(0,0,0,.24);
+    display: none;
+  }
+  #ctx.active { display: block; animation: ctxIn .18s cubic-bezier(.2,.9,.3,1.2); }
+  .ctx-item {
+    padding: 6px 8px; border-radius: 2px;
+    color: #b5bac1; font-size: 14px;
+    cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: background .1s, color .1s;
+  }
+  .ctx-item:hover { background: #5865f2; color: #fff; }
+  .ctx-item.danger { color: #f23f42; }
+  .ctx-item.danger:hover { background: #da373c; color: #fff; }
+  .ctx-sep { height: 1px; background: #2b2d31; margin: 4px 6px; }
+  .ctx-item[disabled] { opacity: .4; cursor: not-allowed; }
+  .ctx-item[disabled]:hover { background: transparent; color: #b5bac1; }
+
+  /* VIEWER */
+  #viewer {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.85);
+    display: none; align-items: center; justify-content: center;
+    z-index: 2000;
+  }
+  #viewer.active { display: flex; animation: fadeIn .15s ease; }
+  #viewer img { max-width: 90vw; max-height: 90vh; border-radius: 4px; animation: zoomIn .3s cubic-bezier(.2,.9,.3,1.2); }
+  #viewer .close {
+    position: absolute; top: 20px; right: 24px;
+    color: #fff; font-size: 28px; cursor: pointer;
+    opacity: .7; transition: opacity .15s;
+  }
+  #viewer .close:hover { opacity: 1; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; top: 24px; left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: #248046; color: #fff;
+    padding: 10px 20px; border-radius: 6px;
+    font-size: 14px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 3000;
+  }
+  #toast.active { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.error { background: #da373c; }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes ctxIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+  @keyframes zoomIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="card">
+    <h1>Welcome back!</h1>
+    <p>We're so excited to see you again</p>
+    <label for="token">Bot Token</label>
+    <input id="token" type="password" autocomplete="off" />
+    <button id="loginBtn">Log In</button>
+    <div id="error"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div id="guilds"></div>
+  <div id="channels">
+    <div id="guild-header">
+      <span id="guild-name">—</span>
+      <span class="chev">▾</span>
+    </div>
+    <div id="perm-warning"></div>
+    <div id="channel-list"></div>
+    <div id="user-panel">
+      <div class="avatar-wrap">
+        <img id="me-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" />
+      </div>
+      <div class="info">
+        <div class="name" id="me-name">Bot</div>
+        <div class="tag" id="me-tag">#0000</div>
+      </div>
+      <button id="logout-btn">Logout</button>
+    </div>
+  </div>
+  <div id="chat">
+    <div id="chat-header"><span class="hash">#</span><span id="chat-title">select a channel</span></div>
+    <div id="messages"></div>
+    <div id="composer">
+      <div id="file-preview">
+        <img id="fp-img" src="" />
+        <div class="meta">
+          <div class="name" id="fp-name"></div>
+          <div class="hint">Enter = 전송 · Esc = 취소</div>
+        </div>
+        <button id="fp-cancel">×</button>
+      </div>
+      <div class="row">
+        <button id="attach-btn" title="Attach">+</button>
+        <input id="msg-input" placeholder="Message" disabled />
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="ctx"></div>
+<div id="viewer"><span class="close">×</span><img id="viewer-img" src="" /></div>
+<div id="toast"></div>
+
+<script src="renderer.js"></script>
+</body>
+</html>

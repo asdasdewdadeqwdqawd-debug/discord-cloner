@@ -1,0 +1,59 @@
+{
+  "name": "c6 디코 봇 채팅 프로그램",
+  "version": "1.0.0",
+  "description": "Discord clone with bot login",
+  "main": "main.js",
+  "author": "asdasdewdadeqwdqawd-debug",
+  "scripts": {
+    "start": "electron .",
+    "kill": "taskkill /F /IM \"Discord Clone.exe\" || exit 0",
+    "dist": "npm run kill && electron-builder --win --publish never",
+    "release": "npm run kill && electron-builder --win --publish always"
+  },
+  "dependencies": {
+    "discord.js": "^14.15.0",
+    "electron-log": "^5.4.4",
+    "electron-updater": "^6.8.9"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.ratman4080.discordclone",
+    "productName": "Discord Clone",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "renderer.js",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Discord Clone"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "asdasdewdadeqwdqawd-debug",
+      "repo": "discord-cloner"
+    }
+  }
+}
