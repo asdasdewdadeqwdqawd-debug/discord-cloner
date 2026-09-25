@@ -107,7 +107,7 @@ autoUpdater.on('error', (err) => {
 });
 
 ipcMain.handle('update:install', () => {
-  autoUpdater.quitAndInstall();
+  autoUpdater.quitAndInstall(true, true);
 });
 
 ipcMain.handle('update:check', async () => {
